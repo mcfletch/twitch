@@ -1,14 +1,14 @@
 """Renderer for a Twitch node (Quake III style BSP map)"""
 import logging,numpy, sys
 from OpenGLContext import testingcontext
-from OpenGLContext.loaders import twitch
+from twitch import bsp
 from OpenGL.GL import *
 from OpenGL.arrays import vbo
 BaseContext = testingcontext.getInteractive()
 
 class TwitchContext( BaseContext ):
     def OnInit( self ):
-        self.twitch = twitch.load( sys.argv[1] )
+        self.twitch = bsp.load( sys.argv[1] )
         self.simple_vertices = vbo.VBO( self.twitch.vertices )
         self.simple_indices = vbo.VBO( self.twitch.simple_faces, target=GL_ELEMENT_ARRAY_BUFFER )
         vertices,indices = self.twitch.patch_faces

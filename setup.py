@@ -6,7 +6,7 @@ Run:
 to install the package from the source archive.
 """
 try:
-	from setuptools import setup
+    from setuptools import setup
 except ImportError, err:
     from distutils.core import setup
 import sys, os
@@ -63,5 +63,11 @@ if __name__ == "__main__":
             }
         },
         # non python files of examples      
+        entry_points={
+          'console_scripts':
+              [
+                'twitch-parse-bsp = twitch.bsp:main',
+            ]
+        },
         **extraArguments
     )

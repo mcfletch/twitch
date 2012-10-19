@@ -12,7 +12,6 @@ import numpy, sys, logging, os, zipfile
 from . import bezier
 
 log = logging.getLogger( __name__ )
-filename = 'maps/focal_p132.bsp'
 i4 = '<i4'
 f4 = '<f4'
 TEXTURE_RECORD = numpy.dtype( [
@@ -169,8 +168,9 @@ def parse_bsp( array ):
     return model
 
 class Twitch( object ):
-    def __init__( self, model ):
+    def __init__( self, model, base_directory=None ):
         self.__dict__.update( model )
+        self.base_directory = base_directory
     
     simple_indices = None
     texture_set = None
@@ -263,45 +263,44 @@ class Twitch( object ):
             self.patch_vertices = final_vertices
             self.patch_indices = final_indices
         return self.patch_vertices,self.patch_indices
-
-def load( filename ):
-    array = numpy.memmap( filename, dtype='c', mode='c' )
-    return Twitch( parse_bsp( array ) )
-
-def _escape_path( fn ):
-    throwaway_directory = '/tmp/junk/though/'
-    test_fn = os.path.normpath( 
-        os.path.join( throwaway_directory, fn )
-    )
-    return os.path.relpath( test_fn, throwaway_directory ).startswith( '../' )
-
-def scan_for_escape_paths( zipfile ):
-    """Scan zipfile's ZipInfo for paths that would escape the unpack directory
-    """
-    for info in zipfile.infolist():
-        if _escape_path( info.filename ):
-            raise RuntimeError( "Potentially malicious zip entry found (references file outside directory), aborting")
-
-def unpack( pk3, key=None ):
-    """Unpack a .pk3 file into temporary directory for loading"""
-    if key:
-        path = os.path.join( os.path.expanduser( '~/.config/twitch/maps' ), key )
-        if not os.path.exists( path ):
-            try:
-                os.makedirs( path )
-            except (IOError, OSError) as err:
-                pass 
-    else:
-        path = tempfile.mkdtemp( prefix='twitch', suffix='pk3' )
-    zip = zipfile.ZipFile( pk3, mode='r' )
-    scan_for_escape_paths( zip )
-    zip.extractall( path )
-    # scan for bsp file (maps/*.bsp)
     
+    def load_textures( self ):
+        """Load all of our textures"""
+        from . import pk3
+        from PIL import Image
+        for i,texture in enumerate(self.textures):
+            relative = ''.join( texture['filename'] )
+            if pk3.escape_path( relative ):
+                raise IOError( """Texture: %s references an external file"""%( relative ))
+            path = os.path.join( self.base_directory, relative + '.tga' )
+            directory,basename = os.path.split( path )
+            alt_path = os.path.join( directory, 'x_'+basename )
+            img = None
+            for possible in [path,alt_path]:
+                if os.path.exists( possible ):
+                    img = Image.open( possible )
+                    #print i, repr(possible), img.size
+            if not img:
+                print 'ERR', i, repr(path)
+
+def load( filename, base_directory=None ):
+    if base_directory is None:
+        # TODO: this could, in theory, produce a directory traversal attack
+        # if you unpacked your file next to something important and called 
+        # parse without a root directory...
+        base_directory = os.path.dirname( os.path.dirname( filename ) )
+    array = numpy.memmap( filename, dtype='c', mode='c' )
+    return Twitch( parse_bsp( array ), base_directory )
     
 def main():
     logging.basicConfig( level=logging.DEBUG )
     target = sys.argv[1]
+    base_directory = None
     if target.endswith( '.pk3' ):
-        unpack( target )
-    return load( sys.argv[1] )
+        from . import pk3 
+        key = pk3.key( target )
+        base_directory = pk3.unpack_directory( key )
+        target = pk3.unpack( target, base_directory )
+    twitch = load( target, base_directory )
+    twitch.load_textures()
+    return twitch

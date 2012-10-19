@@ -1,5 +1,5 @@
-"""Produce Quake3-style Quadratic Bezier Splines"""
-from OpenGLContext.arrays import *
+"""Tessellate Quake3-style Quadratic Bezier Spline Patches"""
+from numpy import *
 
 def weights( a ):
     """Calculate control-point weights for given step on the control curve
