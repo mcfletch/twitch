@@ -10,6 +10,7 @@ patches into simple triangles (note: not triangle strips).
 """
 import numpy, sys, logging, os, zipfile
 from . import bezier
+from . import pk3
 
 log = logging.getLogger( __name__ )
 i4 = '<i4'
@@ -264,24 +265,52 @@ class Twitch( object ):
             self.patch_indices = final_indices
         return self.patch_vertices,self.patch_indices
     
+    def load_texture_by_id( self, id, texture=None ):
+        """Load a single texture by ID (index)
+        
+        returns PIL Image instance or None if image is not found
+        """
+        if texture is None:
+            texture = self.textures[id]
+        relative = ''.join( texture['filename'] )
+        if pk3.escape_path( relative ):
+            raise IOError( """Texture: %s references an external file"""%( relative ))
+        path = os.path.join( self.base_directory, relative + '.tga' )
+        directory,basename = os.path.split( path )
+        alt_path = os.path.join( directory, 'x_'+basename )
+        img = None
+        for possible in [path,alt_path]:
+            if os.path.exists( possible ):
+                from PIL import Image
+                img = Image.open( possible )
+                x,y = img.size 
+                if not self.is_pow2( x ) or not self.is_pow2( y ):
+                    log.warn( 'Non power-of-two Image #%s %s: %sx%s', id, relative, x, y )
+                log.debug( "Image #%s %s: %sx%s,", id, relative, img.size[0], img.size[1] )
+        if not img:
+            log.warn( "Unable to find Image #%s: %s", id, relative )
+        return img 
+    
+    loaded_textures = None
     def load_textures( self ):
         """Load all of our textures"""
-        from . import pk3
-        from PIL import Image
-        for i,texture in enumerate(self.textures):
-            relative = ''.join( texture['filename'] )
-            if pk3.escape_path( relative ):
-                raise IOError( """Texture: %s references an external file"""%( relative ))
-            path = os.path.join( self.base_directory, relative + '.tga' )
-            directory,basename = os.path.split( path )
-            alt_path = os.path.join( directory, 'x_'+basename )
-            img = None
-            for possible in [path,alt_path]:
-                if os.path.exists( possible ):
-                    img = Image.open( possible )
-                    #print i, repr(possible), img.size
-            if not img:
-                print 'ERR', i, repr(path)
+        if self.loaded_textures is None:
+            self.loaded_textures = []
+            for id,texture in enumerate(self.textures):
+                self.loaded_textures.append( self.load_texture_by_id( id, texture ) )
+        return self.loaded_textures
+    
+    @staticmethod
+    def is_pow2( size ):
+        """Is this an even power of two size?"""
+        if size < 0:
+            raise ValueError( "Negative image size???" )
+        while (not (size & 1)) and (size > 1):
+            size = size >> 1
+        if size == 1:
+            return True 
+        return False
+    
 
 def load( filename, base_directory=None ):
     if base_directory is None:
