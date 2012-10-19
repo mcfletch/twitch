@@ -9,7 +9,7 @@ import string, time
 
 from OpenGLContext.events.timer import Timer
 from OpenGLContext.scenegraph.basenodes import *
-from OpenGLContext.scenegraph import bezier
+from twitch import bezier
 
 class TestContext( BaseContext ):
     
