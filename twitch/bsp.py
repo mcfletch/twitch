@@ -286,7 +286,7 @@ class Twitch( object ):
                 x,y = img.size 
                 if not self.is_pow2( x ) or not self.is_pow2( y ):
                     log.warn( 'Non power-of-two Image #%s %s: %sx%s', id, relative, x, y )
-                log.debug( "Image #%s %s: %sx%s,", id, relative, img.size[0], img.size[1] )
+                log.debug( "Image #%s %s %s: %sx%s,", id, relative, img.mode, img.size[0], img.size[1] )
         if not img:
             log.warn( "Unable to find Image #%s: %s", id, relative )
         return img 

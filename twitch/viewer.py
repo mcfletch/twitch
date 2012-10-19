@@ -8,6 +8,8 @@ BaseContext = testingcontext.getInteractive()
 
 class TwitchContext( BaseContext ):
     def OnInit( self ):
+        # TODO: Quake maps actually have a different coordinate system from 
+        # VRML-97 style (such as OpenGLContext), should rotate it...
         self.twitch = bsp.load( sys.argv[1] )
         self.simple_vertices = vbo.VBO( self.twitch.vertices )
         self.simple_indices = vbo.VBO( self.twitch.simple_faces, target=GL_ELEMENT_ARRAY_BUFFER )
@@ -17,13 +19,16 @@ class TwitchContext( BaseContext ):
             self.patch_indices = vbo.VBO( indices, target=GL_ELEMENT_ARRAY_BUFFER )
         else:
             self.patch_indices = None
+        # Construct a big lightmap data-set...
+        
         
     def Render( self, mode = None):
         """Render the geometry for the scene."""
         BaseContext.Render( self, mode )
+        glRotatef( -90, 1.0,0,0 )
         glScalef( .01, .01, .01 )
         glEnable(GL_LIGHTING)
-        glEnable(GL_CULL_FACE)
+        glDisable(GL_CULL_FACE)
         self.simple_vertices.bind()
         try:
             glEnableClientState( GL_VERTEX_ARRAY )
@@ -59,7 +64,7 @@ class TwitchContext( BaseContext ):
             glDisableClientState( GL_COLOR_ARRAY )
         if self.patch_indices is not None:
             glEnable( GL_LIGHTING )
-            glEnable( GL_CULL_FACE )
+            #glEnable( GL_CULL_FACE )
             try:
                 self.patch_vertices.bind()
                 glEnable( GL_LIGHTING )
@@ -95,6 +100,6 @@ class TwitchContext( BaseContext ):
             finally:
                 self.patch_vertices.unbind()
 
-if __name__ == "__main__":
+def main():
     logging.basicConfig( level = logging.WARN )
     TwitchContext.ContextMainLoop()

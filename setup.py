@@ -67,6 +67,7 @@ if __name__ == "__main__":
           'console_scripts':
               [
                 'twitch-parse-bsp = twitch.bsp:main',
+                'twitch-viewer = twitch.viewer:main',
             ]
         },
         **extraArguments
