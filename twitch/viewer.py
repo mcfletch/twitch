@@ -29,12 +29,14 @@ class TwitchContext( BaseContext ):
                 texture = imagetexture.ImageTexture()
                 texture.setImage( image ) # we don't want to trigger redraws, so skip that...
                 self.textures[id] = texture 
-        
+        # default near is far too close for 
+        self.platform.setFrustum( near = 30, far=50000 )
+        self.movementManager.STEPDISTANCE = 50
     def Render( self, mode = None):
         """Render the geometry for the scene."""
         BaseContext.Render( self, mode )
         glRotatef( -90, 1.0,0,0 )
-        glScalef( .01, .01, .01 )
+        #glScalef( .01, .01, .01 )
         if not mode.visible:
             return
         glEnable(GL_LIGHTING)
