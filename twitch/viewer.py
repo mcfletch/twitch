@@ -1,9 +1,12 @@
 """Renderer for a Twitch node (Quake III style BSP map)"""
+import OpenGL
+#OpenGL.FULL_LOGGING = True
 import logging,numpy, sys
 from OpenGLContext import testingcontext
 from twitch import bsp
 from OpenGL.GL import *
 from OpenGL.arrays import vbo
+from OpenGLContext.scenegraph import imagetexture
 BaseContext = testingcontext.getInteractive()
 
 class TwitchContext( BaseContext ):
@@ -20,43 +23,68 @@ class TwitchContext( BaseContext ):
         else:
             self.patch_indices = None
         # Construct a big lightmap data-set...
-        
+        self.textures = {}
+        for id,image in self.twitch.load_textures():
+            if image is not None:
+                texture = imagetexture.ImageTexture()
+                texture.setImage( image ) # we don't want to trigger redraws, so skip that...
+                self.textures[id] = texture 
         
     def Render( self, mode = None):
         """Render the geometry for the scene."""
         BaseContext.Render( self, mode )
         glRotatef( -90, 1.0,0,0 )
         glScalef( .01, .01, .01 )
+        if not mode.visible:
+            return
         glEnable(GL_LIGHTING)
+        glEnable( GL_COLOR_MATERIAL )
         glDisable(GL_CULL_FACE)
         self.simple_vertices.bind()
         try:
             glEnableClientState( GL_VERTEX_ARRAY )
             glEnableClientState( GL_COLOR_ARRAY )
             glEnableClientState( GL_NORMAL_ARRAY )
+            glEnableClientState( GL_TEXTURE_COORD_ARRAY )
             glVertexPointer(
                 3,GL_FLOAT,
                 self.simple_vertices.itemsize, # compound structure
                 self.simple_vertices,
             )
+            glTexCoordPointer(
+                2,
+                GL_FLOAT,
+                self.simple_vertices.itemsize,
+                self.simple_indices + 12,
+            )
             glNormalPointer(
                 GL_FLOAT,
                 self.simple_vertices.itemsize,
-                self.simple_vertices + (3*4),
+                self.simple_vertices + 28,
             )
             glColorPointer(
-                3,GL_FLOAT,
+                4,GL_UNSIGNED_BYTE,
                 self.simple_vertices.itemsize,
-                self.simple_vertices + (40),
+                self.simple_vertices + 40,
             )
             self.simple_indices.bind()
+            current = 0
             try:
-                glDrawElements( 
-                    GL_TRIANGLES, 
-                    len(self.simple_indices), 
-                    GL_UNSIGNED_INT, 
-                    self.simple_indices 
-                )
+                for id,stop in self.twitch.texture_set:
+                    texture = self.textures.get( id )
+                    if texture:
+                        texture.render(
+                            visible = mode.visible,
+                            lit = False,
+                            mode = mode,
+                        )
+                    glDrawElements( 
+                        GL_TRIANGLES, 
+                        int(stop)-current, 
+                        GL_UNSIGNED_INT, 
+                        self.simple_indices+(current*self.simple_indices.itemsize)
+                    )
+                    current = int(stop)
             finally:
                 self.simple_indices.unbind()
         finally:
