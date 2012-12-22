@@ -201,7 +201,7 @@ class Twitch( object ):
             for tex,start,stop,index in zip(textures,starts,stops,start_indices):
                 if texture != tex:
                     if texture:
-                        texture_set.append( (texture,stop))
+                        texture_set.append( (texture,end))
                     texture = tex
                 end = current + (stop-start)
                 indices[current:end] = self.meshverts[start:stop] + index
@@ -287,18 +287,25 @@ class Twitch( object ):
                 if not self.is_pow2( x ) or not self.is_pow2( y ):
                     log.warn( 'Non power-of-two Image #%s %s: %sx%s', id, relative, x, y )
                 log.debug( "Image #%s %s %s: %sx%s,", id, relative, img.mode, img.size[0], img.size[1] )
+                img.info[ 'url' ] = possible
+                img.info[ 'filename' ] = possible
+
         if not img:
             log.warn( "Unable to find Image #%s: %s", id, relative )
         return img 
     
-    loaded_textures = None
     def load_textures( self ):
-        """Load all of our textures"""
-        if self.loaded_textures is None:
-            self.loaded_textures = []
-            for id,texture in enumerate(self.textures):
-                self.loaded_textures.append( self.load_texture_by_id( id, texture ) )
-        return self.loaded_textures
+        """Load all of our textures
+        
+        Note: we do *not* keep a copy, the caller should do so 
+        
+        returns [(id,PILImage or None),...] for each texture defined in the 
+        .bsp file
+        """
+        loaded_textures = []
+        for id,texture in enumerate(self.textures):
+            loaded_textures.append( (id,self.load_texture_by_id( id, texture )) )
+        return loaded_textures
     
     @staticmethod
     def is_pow2( size ):
@@ -310,7 +317,6 @@ class Twitch( object ):
         if size == 1:
             return True 
         return False
-    
 
 def load( filename, base_directory=None ):
     if base_directory is None:
