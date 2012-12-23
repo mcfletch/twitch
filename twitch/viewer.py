@@ -129,6 +129,7 @@ class TwitchContext( BaseContext ):
                     self.patch_indices.unbind()
             finally:
                 self.patch_vertices.unbind()
+        #self.OnQuit( None )
 
 def main():
     logging.basicConfig( level = logging.WARN )
