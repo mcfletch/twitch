@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 from simpleparse.parser import Parser
 from simpleparse.common import chartypes, comments, numbers, strings
 from simpleparse.dispatchprocessor import *
@@ -128,5 +129,5 @@ def main( ):
         print_suite( suite )
 
 if __name__ == "__main__":
-    test_parser()
+    #test_parser()
     main()
