@@ -90,11 +90,17 @@ class TwitchContext( BaseContext ):
         #glScalef( .01, .01, .01 )
         if not mode.visible:
             return
+        #glEnable(GL_LIGHTING)
         glDisable(GL_LIGHTING)
         glEnable( GL_COLOR_MATERIAL )
-        glActiveTexture( GL_TEXTURE1 )
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
+        
         glActiveTexture( GL_TEXTURE0 )
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
+        
+        glActiveTexture( GL_TEXTURE1 )
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
 
         cull = self.set_cull( 'front', 'none' )
         self.simple_vertices.bind()
@@ -148,12 +154,13 @@ class TwitchContext( BaseContext ):
                                 lit = False,
                                 mode = mode,
                             )
-                        elif texture and texture != current_texture:
+                        if texture and texture != current_texture:
                             if isinstance( texture, bsp.Brush ):
                                 # scripted brush can have lots and lots of details...
+                                glActiveTexture( GL_TEXTURE0 )
                                 cull = self.set_cull( texture.cull, cull )
                                 texture.render(
-                                    visible = model.visible,
+                                    visible = mode.visible,
                                     lit = False,
                                     mode = mode,
                                 )
