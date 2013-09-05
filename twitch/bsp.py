@@ -231,7 +231,7 @@ class Twitch( object ):
             simple_types = numpy.logical_or( self.faces['type'] == 1, self.faces['type'] == 3)
             simple_faces = numpy.compress( simple_types, self.faces )
             # texture counts...
-            sortorder = numpy.lexsort( (simple_faces['texture'],) )
+            sortorder = numpy.lexsort( (simple_faces['lm_index'],simple_faces['texture'],) )
             simple_faces = numpy.take( simple_faces, sortorder )
             
             self.texture_set = texture_set = []
@@ -241,21 +241,26 @@ class Twitch( object ):
             # ick, should be a fast way to do this...
             starts = simple_faces['meshvert']
             textures = simple_faces['texture']
+            lightmaps = simple_faces['lm_index']
             stops = simple_faces['meshvert'] + simple_faces['n_meshverts']
             start_indices = simple_faces['vertex']
             current = 0
             texture = None
-            for tex,start,stop,index in zip(textures,starts,stops,start_indices):
-                if texture != tex:
-                    if texture:
-                        texture_set.append( (texture,end))
-                    texture = tex
+            lightmap = None
+            for lm,tex,start,stop,index in zip(lightmaps,textures,starts,stops,start_indices):
+                if lm != lightmap or texture != tex:
+                    if lightmap or texture:
+                        texture_set.append( (lm,texture,end))
+                    if lm != lightmap:
+                        lightmap = lm 
+                    elif tex != texture:
+                        texture = tex 
                 end = current + (stop-start)
                 indices[current:end] = self.meshverts[start:stop] + index
                 current = end
             self.simple_indices = indices
             # for type 2, we need to convert a control surface to a set of indices...
-            log.debug( '%s textures used by simple geometry', len(self.texture_set, ))
+            log.debug( '%s texture/lightmap pairs used by simple geometry', len(self.texture_set, ))
         return self.simple_indices
     patch_vertices = None
     patch_indices = None
@@ -389,6 +394,11 @@ class Twitch( object ):
         for id,texture in enumerate(self.textures):
             loaded_textures.append( (id,self.load_texture_by_id( id, texture )) )
         return loaded_textures
+    
+    def iter_lightmaps( self ):
+        """Load all of our lightmaps"""
+        for id,texture in enumerate(self.lightmaps):
+            yield id,texture[0]
     
     @staticmethod
     def is_pow2( size ):

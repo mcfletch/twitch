@@ -7,6 +7,7 @@ from twitch import bsp
 from OpenGL.GL import *
 from OpenGL.arrays import vbo
 from OpenGLContext.scenegraph import imagetexture
+from OpenGLContext import texture
 BaseContext = testingcontext.getInteractive()
 
 class Brush( bsp.Brush ):
@@ -18,10 +19,21 @@ class Brush( bsp.Brush ):
         for id,map in self.images.items():
             self.textures[id] = imagetexture.ImageTexture()
             self.textures[id].setImage( map )
-    def enable( self ):
-        pass 
+    def render( self, visible=True, lit=False, mode=None ):
+        pass
     def disable( self ):
         pass
+class Lightmap( object ):
+    texture = None
+    def __init__( self, id, data ):
+        self.id = id 
+        self.data = data 
+    def render( self, visible=True, lit=False, mode=None ):
+        glActiveTexture( GL_TEXTURE1 )
+        if not self.texture:
+            self.texture = texture.Texture(format=GL_RGB)
+            self.texture.store( 3, GL_RGB, 128,128, self.data )
+        self.texture()
 
 class TwitchContext( BaseContext ):
     def OnInit( self ):
@@ -48,10 +60,15 @@ class TwitchContext( BaseContext ):
                 texture = imagetexture.ImageTexture()
                 texture.setImage( image ) # we don't want to trigger redraws, so skip that...
                 self.textures[id] = texture 
+        self.lightmaps = {}
+        for id,data in self.twitch.iter_lightmaps():
+            self.lightmaps[id] = Lightmap( id, data )
         # default near is far too close for 8 units/foot quake model size
         self.platform.setFrustum( near = 30, far=50000 )
         self.movementManager.STEPDISTANCE = 50
     def set_cull( self, newmode,current ):
+        if newmode == 'disable':
+            newmode = 'none'
         if newmode == current:
             return newmode 
         if newmode == 'front':
@@ -73,8 +90,12 @@ class TwitchContext( BaseContext ):
         #glScalef( .01, .01, .01 )
         if not mode.visible:
             return
-        glEnable(GL_LIGHTING)
+        glDisable(GL_LIGHTING)
         glEnable( GL_COLOR_MATERIAL )
+        glActiveTexture( GL_TEXTURE1 )
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
+        glActiveTexture( GL_TEXTURE0 )
+
         cull = self.set_cull( 'front', 'none' )
         self.simple_vertices.bind()
         try:
@@ -87,11 +108,19 @@ class TwitchContext( BaseContext ):
                 self.simple_vertices.itemsize, # compound structure
                 self.simple_vertices,
             )
+            glClientActiveTexture( GL_TEXTURE0 )
             glTexCoordPointer(
                 2,
                 GL_FLOAT,
                 self.simple_vertices.itemsize,
                 self.simple_indices + 12,
+            )
+            glClientActiveTexture( GL_TEXTURE1 )
+            glTexCoordPointer(
+                2,
+                GL_FLOAT,
+                self.simple_vertices.itemsize,
+                self.simple_indices + 20,
             )
             glNormalPointer(
                 GL_FLOAT,
@@ -105,21 +134,37 @@ class TwitchContext( BaseContext ):
             )
             self.simple_indices.bind()
             current = 0
+            
+            current_lightmap = None
+            current_texture = None
             try:
-                for id,stop in self.twitch.texture_set:
+                for lightmap,id,stop in self.twitch.texture_set:
                     texture = self.textures.get( id )
+                    lightmap = self.lightmaps.get( id )
                     if not getattr(texture,'nodraw',None):
-                        if isinstance( texture, bsp.Brush ):
-                            # scripted brush can have lots and lots of details...
-                            cull = self.set_cull( texture.cull, cull )
-                            texture.enable()
-                        elif texture:
-                            cull = self.set_cull( 'front', cull )
-                            texture.render(
-                                visible = mode.visible,
+                        if lightmap and lightmap != current_lightmap:
+                            lightmap.render(
+                                visible=mode.visible,
                                 lit = False,
                                 mode = mode,
                             )
+                        elif texture and texture != current_texture:
+                            if isinstance( texture, bsp.Brush ):
+                                # scripted brush can have lots and lots of details...
+                                cull = self.set_cull( texture.cull, cull )
+                                texture.render(
+                                    visible = model.visible,
+                                    lit = False,
+                                    mode = mode,
+                                )
+                            elif texture:
+                                cull = self.set_cull( 'front', cull )
+                                glActiveTexture( GL_TEXTURE0 )
+                                texture.render(
+                                    visible = mode.visible,
+                                    lit = False,
+                                    mode = mode,
+                                )
                         glDrawElements( 
                             GL_TRIANGLES, 
                             int(stop)-current, 
