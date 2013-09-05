@@ -9,11 +9,25 @@ from OpenGL.arrays import vbo
 from OpenGLContext.scenegraph import imagetexture
 BaseContext = testingcontext.getInteractive()
 
+class Brush( bsp.Brush ):
+    """Sub-class with rendering functionality for Brushes"""
+    def __init__( self, *args, **named ):
+        super(Brush,self).__init__(*args,**named)
+        self.textures = {}
+    def compile_textures( self ):
+        for id,map in self.images.items():
+            self.textures[id] = imagetexture.ImageTexture()
+            self.textures[id].setImage( map )
+    def enable( self ):
+        pass 
+    def disable( self ):
+        pass
+
 class TwitchContext( BaseContext ):
     def OnInit( self ):
         # TODO: Quake maps actually have a different coordinate system from 
         # VRML-97 style (such as OpenGLContext), should rotate it...
-        self.twitch = bsp.load( sys.argv[1] )
+        self.twitch = bsp.load( sys.argv[1], brush_class=Brush )
         self.simple_vertices = vbo.VBO( self.twitch.vertices )
         self.simple_indices = vbo.VBO( self.twitch.simple_faces, target=GL_ELEMENT_ARRAY_BUFFER )
         vertices,indices = self.twitch.patch_faces
@@ -25,13 +39,33 @@ class TwitchContext( BaseContext ):
         # Construct a big lightmap data-set...
         self.textures = {}
         for id,image in self.twitch.load_textures():
-            if image is not None:
+            if image is None:
+                pass
+            elif isinstance( image, bsp.Brush ):
+                self.textures[id] = image
+                
+            else:
                 texture = imagetexture.ImageTexture()
                 texture.setImage( image ) # we don't want to trigger redraws, so skip that...
                 self.textures[id] = texture 
-        # default near is far too close for 
+        # default near is far too close for 8 units/foot quake model size
         self.platform.setFrustum( near = 30, far=50000 )
         self.movementManager.STEPDISTANCE = 50
+    def set_cull( self, newmode,current ):
+        if newmode == current:
+            return newmode 
+        if newmode == 'front':
+            if current == 'none':
+                glEnable(GL_CULL_FACE)
+            glCullFace( GL_FRONT )
+        elif newmode == 'back':
+            if current == 'none':
+                glEnable(GL_CULL_FACE)
+            glCullFace( GL_BACK )
+        else:
+            glDisable( GL_CULL_FACE )
+        return newmode
+        
     def Render( self, mode = None):
         """Render the geometry for the scene."""
         BaseContext.Render( self, mode )
@@ -41,7 +75,7 @@ class TwitchContext( BaseContext ):
             return
         glEnable(GL_LIGHTING)
         glEnable( GL_COLOR_MATERIAL )
-        glDisable(GL_CULL_FACE)
+        cull = self.set_cull( 'front', 'none' )
         self.simple_vertices.bind()
         try:
             glEnableClientState( GL_VERTEX_ARRAY )
@@ -74,18 +108,27 @@ class TwitchContext( BaseContext ):
             try:
                 for id,stop in self.twitch.texture_set:
                     texture = self.textures.get( id )
-                    if texture:
-                        texture.render(
-                            visible = mode.visible,
-                            lit = False,
-                            mode = mode,
+                    if not getattr(texture,'nodraw',None):
+                        if isinstance( texture, bsp.Brush ):
+                            # scripted brush can have lots and lots of details...
+                            cull = self.set_cull( texture.cull, cull )
+                            texture.enable()
+                        elif texture:
+                            cull = self.set_cull( 'front', cull )
+                            texture.render(
+                                visible = mode.visible,
+                                lit = False,
+                                mode = mode,
+                            )
+                        glDrawElements( 
+                            GL_TRIANGLES, 
+                            int(stop)-current, 
+                            GL_UNSIGNED_INT, 
+                            self.simple_indices+(current*self.simple_indices.itemsize)
                         )
-                    glDrawElements( 
-                        GL_TRIANGLES, 
-                        int(stop)-current, 
-                        GL_UNSIGNED_INT, 
-                        self.simple_indices+(current*self.simple_indices.itemsize)
-                    )
+                        if isinstance( texture, bsp.Brush ):
+                            # scripted brush can have lots and lots of details...
+                            texture.disable()
                     current = int(stop)
             finally:
                 self.simple_indices.unbind()

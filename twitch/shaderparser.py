@@ -12,7 +12,7 @@ ref             := '$', name
 name            := [-a-zA-Z],[-_./a-zA-Z0-9]*
 vector          := '(', ts, (number,ts)*, ')', ts
 <ts_simple>     := [ \t]*
-<ts>            :=  ( [ \011-\015\\r\\n]+ / slashslash_comment)*
+<ts>            :=  ( [ \011-\015]+ / slashslash_comment)*
 '''
 
 class ScriptParser( Parser ):
@@ -31,6 +31,7 @@ def test_parser( ):
         ('my/name/there', 'name'),
         ('{ this and that 23.0 }', 'suite' ),
         ('textures/focal/alpha_100', 'name' ),
+        ('rgbGen','name'),
         ('{}', 'suite' ),
         ('1.0', 'number'),
         ('''	// Secondary texture ONLY
@@ -108,23 +109,28 @@ class ParseProcessor( DispatchProcessor ):
             return float( buffer[start:stop] )
     def vector( self, (tag,start,stop,children), buffer):
         return dispatchList( self, children, buffer )
-        
-def main( ):
-    
-    import sys 
-    content = open( sys.argv[1] ).read()
+
+def load( filename ):
+    content = open( filename ).read()
     parser = buildParser()
     processor = ParseProcessor()
     
     parsed = parser.parse( content, production='file')
     processor( parsed, content )
+    return processor.productions
+        
+def main( ):
+    import sys 
+    productions = load( sys.argv[1] )
     def print_suite( suite, indent=1 ):
+        print ' '*max((indent-1,0)),'{'
         for component in suite:
             if isinstance( component, tuple ):
                 print ' '*indent, component[0], '->', " ".join( [str(x) for x in component[1]] )
             else:
                 print_suite( component, indent+1 )
-    for key,suite in sorted( processor.productions.items()):
+        print ' '*max((indent-1,0)),'}'
+    for key,suite in sorted( productions.items()):
         print key 
         print_suite( suite )
 
