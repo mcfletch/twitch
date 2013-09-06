@@ -42,7 +42,7 @@ if __name__ == "__main__":
             """Environment :: Win32 (MS Windows)""",
         ],
         'download_url': "http://pypi.python.org/pypi/Twitch",
-        'keywords': 'PyOpenGL,OpenGL,Context,OpenGLContext,render,3D,TrueType,text,VRML,VRML97,scenegraph',
+        'keywords': 'PyOpenGL,OpenGL,Context,OpenGLContext,render,3D,TrueType,text,scenegraph',
         'platforms': ['Win32','Linux','OS-X','Posix'],
     }
     ### Now the actual set up call
