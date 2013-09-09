@@ -169,7 +169,8 @@ def parse_bsp( array ):
     return model
 
 class Brush( object ):
-    nodraw = False 
+    nodraw = False
+    sky = False
     cull = 'front'
     def __init__( self, definition ):
         self.definition = definition 
@@ -185,6 +186,7 @@ class Brush( object ):
                     self.commands.append( definition )
             else:
                 self.suites.append( definition )
+                
         for prop in self.NO_DRAW_PROPERTIES:
             if prop in self.surface_params:
                 self.nodraw = True
@@ -209,7 +211,7 @@ class Brush( object ):
                 if command[0] in ['map','clampMap']:
                     filename = command[1]
                     if filename not in self.maps:
-                        self.images[filename] = twitch._load_tga_file( command[1] )
+                        self.images[filename] = twitch._load_image_file( command[1] )
                         if not self.images[filename]:
                             log.warn( 'Unable to load %s', command )
 
@@ -326,7 +328,7 @@ class Twitch( object ):
             texture = self.textures[id]
         relative = ''.join( texture['filename'] )
         
-        img = self._load_tga_file( relative )
+        img = self._load_image_file( relative )
         
         if img is None:
             img = self.load_script( id, relative )
@@ -336,24 +338,27 @@ class Twitch( object ):
             log.warn( "Unable to find Image #%s: %s", id, relative )
         return img 
     
-    def _load_tga_file( self, relative ):
+    def _load_image_file( self, relative ):
         if pk3.escape_path( relative ):
             raise IOError( """Texture: %s references an external file"""%( relative ))
-        path = os.path.join( self.base_directory, relative + '.tga' )
+        extensions = ['.tga','.jpg','.png','.jpeg']
+        path = os.path.join( self.base_directory, relative )
         directory,basename = os.path.split( path )
         alt_path = os.path.join( directory, 'x_'+basename )
         img = None
         for possible in [path,alt_path]:
-            if os.path.exists( possible ):
-                from PIL import Image
-                img = Image.open( possible )
-                x,y = img.size 
-                if not self.is_pow2( x ) or not self.is_pow2( y ):
-                    log.warn( 'Non power-of-two Image #%s %s: %sx%s', id, relative, x, y )
-                log.debug( "Image #%s %s %s: %sx%s,", id, relative, img.mode, img.size[0], img.size[1] )
-                img.info[ 'url' ] = possible
-                img.info[ 'filename' ] = possible
-                return img
+            for extension in extensions:
+                final = possible + extension
+                if os.path.exists( final ):
+                    from PIL import Image
+                    img = Image.open( final )
+                    x,y = img.size 
+                    if not self.is_pow2( x ) or not self.is_pow2( y ):
+                        log.warn( 'Non power-of-two Image #%s %s: %sx%s', id, relative, x, y )
+                    log.debug( "Image #%s %s %s: %sx%s,", id, relative, img.mode, img.size[0], img.size[1] )
+                    img.info[ 'url' ] = final
+                    img.info[ 'filename' ] = final
+                    return img
         return None
     
     def load_script( self, id, name ):
