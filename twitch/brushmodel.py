@@ -1,29 +1,51 @@
+
+
 class Brush( object ):
     """Model view of a brush (no rendering logic)"""
-    nodraw = False
-    sky = False
-    cull = 'front'
+    DEFAULT_SURFACE_PARAMS = dict(
+        cull = 'front',
+        flesh = False,
+        fog = False,
+        nodamage = False,
+        nodlight = False,
+        nodraw = False,
+        nodrop = False,
+        noimpact = False,
+        nolightmap = False,
+        nomarks = False,
+        nosteps = False,
+        nonsolid = False,
+        origin = False,
+        lava = False,
+        metalsteps = False,
+        playerclip = False,
+        slick = False,
+        slime = False,
+        structural = False,
+        trans = False,
+        water = False,
+    )
     def __init__( self, definition ):
         self.definition = definition 
         self.commands = []
         self.suites = []
-        self.surface_params = {}
         self.images = {}
         for definition in definition:
             if isinstance( definition, tuple ):
                 if tuple[0] == 'surfaceparam':
-                    self.surface_params[definition[1][0]] = definition[1][1:]
+                    name,param = definition[1][0],definition[1][1:]
+                    if not param:
+                        # flag type...
+                        param = True 
+                    elif len(param) == 1:
+                        param = param[0]
+                    if name in self.DEFAULT_SURFACE_PARAMS:
+                        setattr( self, name, param )
                 else:
                     self.commands.append( definition )
             else:
                 self.suites.append( definition )
                 
-        for prop in self.NO_DRAW_PROPERTIES:
-            if prop in self.surface_params:
-                self.nodraw = True
-        if 'cull' in self.surface_params:
-            self.cull = self.surface_params['cull']
-    NO_DRAW_PROPERTIES = ['nodraw','areaportal','clusterportal','donotenter']
     def get_command( self, command ):
         for cmd in self.commands:
             if cmd[0] == command:
@@ -45,3 +67,4 @@ class Brush( object ):
                         self.images[filename] = twitch._load_image_file( command[1] )
                         if not self.images[filename]:
                             log.warn( 'Unable to load %s', command )
+    
