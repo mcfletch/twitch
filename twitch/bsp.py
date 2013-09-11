@@ -324,6 +324,17 @@ class Twitch( object ):
         
         returns PIL Image instance or None if image is not found
         """
+        if id in (
+            'textures/common/hintskip',
+            'textures/common/clip',
+            'textures/common/botclip',
+            'textures/common/nodraw',
+            'textures/common/skip',
+            'textures/common/donotenter',
+            'textures/common/invisible',
+            'textures/common/trigger',
+        ):
+            return Brush( [ ('surfaceparam','nodraw')] )
         if texture is None:
             texture = self.textures[id]
         relative = ''.join( texture['filename'] )
@@ -333,8 +344,6 @@ class Twitch( object ):
         if img is None:
             img = self.load_script( id, relative )
         if not img:
-            if id in ('textures/common/hintskip','textures/common/clip','textures/common/botclip'):
-                return Brush( [ ('surfaceparam','nodraw')] )
             log.warn( "Unable to find Image #%s: %s", id, relative )
         return img 
     
@@ -354,7 +363,7 @@ class Twitch( object ):
                     img = Image.open( final )
                     x,y = img.size 
                     if not self.is_pow2( x ) or not self.is_pow2( y ):
-                        log.warn( 'Non power-of-two Image #%s %s: %sx%s', id, relative, x, y )
+                        log.warn( 'Non power-of-two Image %s: %sx%s', relative, x, y )
                     log.debug( "Image #%s %s %s: %sx%s,", id, relative, img.mode, img.size[0], img.size[1] )
                     img.info[ 'url' ] = final
                     img.info[ 'filename' ] = final
