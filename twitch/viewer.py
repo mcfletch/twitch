@@ -3,43 +3,18 @@ import OpenGL
 #OpenGL.FULL_LOGGING = True
 import logging,numpy, sys
 from OpenGLContext import testingcontext
-from twitch import bsp
+from twitch import bsp,brushviewer
 from OpenGL.GL import *
 from OpenGL.arrays import vbo
 from OpenGLContext.scenegraph import imagetexture
 from OpenGLContext import texture
 BaseContext = testingcontext.getInteractive()
 
-class Brush( bsp.Brush ):
-    """Sub-class with rendering functionality for Brushes"""
-    def __init__( self, *args, **named ):
-        super(Brush,self).__init__(*args,**named)
-        self.textures = {}
-    def compile_textures( self ):
-        for id,map in self.images.items():
-            self.textures[id] = imagetexture.ImageTexture()
-            self.textures[id].setImage( map )
-    def render( self, visible=True, lit=False, mode=None ):
-        pass
-    def disable( self ):
-        pass
-class Lightmap( object ):
-    texture = None
-    def __init__( self, id, data ):
-        self.id = id 
-        self.data = data 
-    def render( self, visible=True, lit=False, mode=None ):
-        glActiveTexture( GL_TEXTURE1 )
-        if not self.texture:
-            self.texture = texture.Texture(format=GL_RGB)
-            self.texture.store( 3, GL_RGB, 128,128, self.data )
-        self.texture()
-
 class TwitchContext( BaseContext ):
     def OnInit( self ):
         # TODO: Quake maps actually have a different coordinate system from 
         # VRML-97 style (such as OpenGLContext), should rotate it...
-        self.twitch = bsp.load( sys.argv[1], brush_class=Brush )
+        self.twitch = bsp.load( sys.argv[1], brush_class=brushviewer.Brush )
         self.simple_vertices = vbo.VBO( self.twitch.vertices )
         self.simple_indices = vbo.VBO( self.twitch.simple_faces, target=GL_ELEMENT_ARRAY_BUFFER )
         vertices,indices = self.twitch.patch_faces
@@ -53,7 +28,7 @@ class TwitchContext( BaseContext ):
         for id,image in self.twitch.load_textures():
             if image is None:
                 pass
-            elif isinstance( image, bsp.Brush ):
+            elif isinstance( image, brushviewer.Brush ):
                 self.textures[id] = image
                 
             else:
@@ -62,7 +37,7 @@ class TwitchContext( BaseContext ):
                 self.textures[id] = texture 
         self.lightmaps = {}
         for id,data in self.twitch.iter_lightmaps():
-            self.lightmaps[id] = Lightmap( id, data )
+            self.lightmaps[id] = brushviewer.Lightmap( id, data )
         # default near is far too close for 8 units/foot quake model size
         self.platform.setFrustum( near = 30, far=50000 )
         self.movementManager.STEPDISTANCE = 50
@@ -157,7 +132,7 @@ class TwitchContext( BaseContext ):
                                 mode = mode,
                             )
                         if texture and texture != current_texture:
-                            if isinstance( texture, bsp.Brush ):
+                            if isinstance( texture, brushviewer.Brush ):
                                 # scripted brush can have lots and lots of details...
                                 glActiveTexture( GL_TEXTURE0 )
                                 cull = self.set_cull( texture.cull, cull )
@@ -180,7 +155,7 @@ class TwitchContext( BaseContext ):
                             GL_UNSIGNED_INT, 
                             self.simple_indices+(current*self.simple_indices.itemsize)
                         )
-                        if isinstance( texture, bsp.Brush ):
+                        if isinstance( texture, brushviewer.Brush ):
                             # scripted brush can have lots and lots of details...
                             texture.disable()
                     current = int(stop)
