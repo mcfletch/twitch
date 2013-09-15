@@ -63,6 +63,14 @@ class Brush( object ):
         for cmd in self.commands:
             if cmd[0] == command:
                 yield cmd
+    SKY_SUFFIXES = [
+        ('rt',[-1,0,0]),
+        ('lf',[1,0,0]),
+        ('ft',[0,0,1]),
+        ('bk',[0,0,-1]),
+        ('up',[0,-1,0]),
+        ('dn',[0,1,0]),
+    ]
     loaded = False
     def load( self, twitch ):
         """Use the twitch object to load our external resources"""
@@ -87,9 +95,13 @@ class Brush( object ):
                 farbox,cloudheight = command[0:2]
             except ValueError as err:
                 raise ValueError( *command )
-            for suffix in ('rt','lf','ft','bk','up','dn'):
-                self.images[suffix] = twitch._load_image_file( '%s_%s'%(farbox,suffix) )
-            print 'Box images', self.images
+            if farbox == '-':
+                raise ValueError( "Can't currently render non-skybox skies" )
+            for suffix,normal in self.SKY_SUFFIXES:
+                image = twitch._load_image_file( '%s_%s'%(farbox,suffix) )
+                if not image:
+                    raise RuntimeError( "unable to find skybox image: %s", '%s_%s'%(farbox,suffix))
+                self.images[suffix] = image
             try:
                 self.cloudheight = float( cloudheight )
             except ValueError as err:

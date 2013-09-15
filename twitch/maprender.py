@@ -1,5 +1,6 @@
 """Low-level renderer for Q3 style BSP maps"""
-import logging,numpy, sys
+import logging,numpy, sys,traceback
+log = logging.getLogger( __name__ )
 from twitch import bsp,brushviewer
 from OpenGL.GL import *
 from OpenGL.arrays import vbo
@@ -28,7 +29,7 @@ class Map( object ):
                 pass
             elif isinstance( image, brushviewer.Brush ):
                 self.textures[id] = image
-                
+                image.compile_textures()
             else:
                 texture = imagetexture.ImageTexture()
                 texture.setImage( image ) # we don't want to trigger redraws, so skip that...
@@ -38,9 +39,16 @@ class Map( object ):
             self.lightmaps[id] = brushviewer.Lightmap( id, data )
         self.skies = self.twitch.find_sky()
         if self.skies:
-            self.sky = self.skies[0]
             for sky in self.skies:
-                sky.load(self.twitch)
+                print 'Sky:', sky
+                try:
+                    sky.load(self.twitch)
+                    sky.compile_textures()
+                except Exception as err:
+                    log.warn( 'Unable to load textures for sky %s: %s', sky.id, traceback.format_exc() )
+                else:
+                    self.sky = sky
+                    break
         self.loaded = True
     sky = None
     def set_cull( self, newmode,current ):
@@ -68,7 +76,7 @@ class Map( object ):
         
         if self.sky:
             self.sky.render_sky( mode )
-        
+            return
         glActiveTexture( GL_TEXTURE0 )
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
