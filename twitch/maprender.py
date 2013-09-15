@@ -36,7 +36,13 @@ class Map( object ):
         self.lightmaps = {}
         for id,data in self.twitch.iter_lightmaps():
             self.lightmaps[id] = brushviewer.Lightmap( id, data )
+        self.skies = self.twitch.find_sky()
+        if self.skies:
+            self.sky = self.skies[0]
+            for sky in self.skies:
+                sky.load(self.twitch)
         self.loaded = True
+    sky = None
     def set_cull( self, newmode,current ):
         if newmode == 'disable':
             newmode = 'none'
@@ -59,6 +65,9 @@ class Map( object ):
         #glEnable(GL_LIGHTING)
         glDisable(GL_LIGHTING)
         glEnable( GL_COLOR_MATERIAL )
+        
+        if self.sky:
+            self.sky.render_sky( mode )
         
         glActiveTexture( GL_TEXTURE0 )
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)

@@ -19,21 +19,20 @@ class Brush( brushmodel.Brush ):
         super(Brush,self).__init__(*args,**named)
         self.textures = {}
         for prop in self.NO_DRAW_PROPERTIES:
-            getattr( self, prop )
-            self.nodraw = True
-        if 'cull' in self.surface_params:
-            self.cull = self.surface_params['cull']
+            if getattr( self, prop ):
+                self.nodraw = True
     def compile_textures( self ):
         for id,map in self.images.items():
             self.textures[id] = imagetexture.ImageTexture()
             self.textures[id].setImage( map )
     def render( self, visible=True, lit=False, mode=None ):
         pass
-#        if self.suites:
-#            for suite in self.suites:
-#                if suite.
     def disable( self ):
         pass
+    
+    def render_sky( self, mode=None ):
+        """Render the sky in Q3-like fashion"""
+        print 'render sky', self
 class Lightmap( object ):
     texture = None
     def __init__( self, id, data ):

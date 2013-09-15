@@ -168,58 +168,12 @@ def parse_bsp( array ):
             log.debug( 'Loaded %s %s', data.shape[0], lump )
     return model
 
-class Brush( object ):
-    nodraw = False
-    sky = False
-    cull = 'front'
-    def __init__( self, definition ):
-        self.definition = definition 
-        self.commands = []
-        self.suites = []
-        self.surface_params = {}
-        self.images = {}
-        for definition in definition:
-            if isinstance( definition, tuple ):
-                if tuple[0] == 'surfaceparam':
-                    self.surface_params[definition[1][0]] = definition[1][1:]
-                else:
-                    self.commands.append( definition )
-            else:
-                self.suites.append( definition )
-                
-        for prop in self.NO_DRAW_PROPERTIES:
-            if prop in self.surface_params:
-                self.nodraw = True
-        if 'cull' in self.surface_params:
-            self.cull = self.surface_params['cull']
-    NO_DRAW_PROPERTIES = ['nodraw','areaportal','clusterportal','donotenter']
-    def get_command( self, command ):
-        for cmd in self.commands:
-            if cmd[0] == command:
-                return cmd
-        return None
-    def get_commands( self, command ):
-        for cmd in self.commands:
-            if cmd[0] == command:
-                yield cmd
-    def load( self, twitch ):
-        """Use the twitch object to load our external resources"""
-        if self.nodraw:
-            return
-        for suite in self.suites:
-            for command in suite:
-                if command[0] in ['map','clampMap']:
-                    filename = command[1]
-                    if filename not in self.maps:
-                        self.images[filename] = twitch._load_image_file( command[1] )
-                        if not self.images[filename]:
-                            log.warn( 'Unable to load %s', command )
-
 class Twitch( object ):
-    def __init__( self, model, base_directory=None, brush_class=Brush ):
+    def __init__( self, filename, model, base_directory=None, brush_class=None ):
+        self.model_name = os.path.splitext(os.path.basename( filename ))[0]
+        self.filename = filename 
         self.__dict__.update( model )
         self.base_directory = base_directory
-        self._shader_brushes = {}
         self.brush_class = brush_class
     
     simple_indices = None
@@ -373,28 +327,41 @@ class Twitch( object ):
     def load_script( self, id, name ):
         """Find a script by name, to create a non-default texture"""
         img = None
-        if id in self.scripts:
-            img = self.compile_script( id, self.scripts[id] )
+        if id in self.brushes:
+            img = self.compile_script( id, self.brushes[id] )
         return img 
     
-    _shader_scripts = None
+    _shader_brushes = None
     @property
-    def scripts( self ):
-        if self._shader_scripts is None:
+    def brushes( self ):
+        if self._shader_brushes is None:
             log.info( 'Parsing shader files' )
-            self._shader_scripts = {}
-            for script_file in glob.glob( os.path.join( self.base_directory, 'scripts', '*.shader' )):
+            self._shader_brushes = {}
+            shader_path = os.path.join( 'scripts','%s.shader'%(self.model_name))
+            if pk3.escape_path( self.model_name ):
+                raise RuntimeError( 'Map name %s includes special shell characters, aborting'%(self.model_name,) )
+            for script_file in glob.glob( os.path.join( self.base_directory, shader_path )):
                 from . import shaderparser
-                self._shader_scripts.update( shaderparser.load( script_file ))
-        return self._shader_scripts
+                for id,definition in shaderparser.load( script_file ).items():
+                    brush = self.brush_class( id, definition )
+                    self._shader_brushes[id] = brush
+        return self._shader_brushes
+    
+    sky_brushes = None
+    def find_sky( self ):
+        if self.sky_brushes is None:
+            self.sky_brushes = [
+                brush for brush in self._shader_brushes.values()
+                if brush.sky 
+            ]
+        return self.sky_brushes
     
     def compile_script( self, id, definition ):
         """Compile a Quake3 shader script definition from twitch.shaderparser"""
-        if id not in self._shader_brushes:
-            brush = self.brush_class( definition )
-            brush.load()
-            self._shader_brushes[id] = brush 
-        return self._shader_brushes[id]
+        brush = self._shader_brushes.get( id )
+        if brush:
+            brush.load(self)
+        return brush
     
     def load_textures( self ):
         """Load all of our textures
@@ -427,14 +394,14 @@ class Twitch( object ):
 
     
         
-def load( filename, base_directory=None, brush_class=Brush ):
+def load( filename, base_directory=None, brush_class=None ):
     if base_directory is None:
         # TODO: this could, in theory, produce a directory traversal attack
         # if you unpacked your file next to something important and called 
         # parse without a root directory...
         base_directory = os.path.dirname( os.path.dirname( filename ) )
     array = numpy.memmap( filename, dtype='c', mode='c' )
-    return Twitch( parse_bsp( array ), base_directory, brush_class=brush_class )
+    return Twitch( filename, parse_bsp( array ), base_directory, brush_class=brush_class )
     
 def main():
     logging.basicConfig( level=logging.DEBUG )

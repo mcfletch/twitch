@@ -1,11 +1,16 @@
-
+import logging 
+log = logging.getLogger( __name__ )
 
 class Brush( object ):
     """Model view of a brush (no rendering logic)"""
     DEFAULT_SURFACE_PARAMS = dict(
+        areaportal=False,
+        clusterportal=False,
         cull = 'front',
+        donotenter=False,
         flesh = False,
         fog = False,
+        sky = False,
         nodamage = False,
         nodlight = False,
         nodraw = False,
@@ -25,7 +30,8 @@ class Brush( object ):
         trans = False,
         water = False,
     )
-    def __init__( self, definition ):
+    def __init__( self, id, definition ):
+        self.id = id
         self.definition = definition 
         for key,value in self.DEFAULT_SURFACE_PARAMS.items():
             setattr( self, key, value )
@@ -34,7 +40,7 @@ class Brush( object ):
         self.images = {}
         for definition in definition:
             if isinstance( definition, tuple ):
-                if tuple[0] == 'surfaceparam':
+                if definition[0] == 'surfaceparm':
                     name,param = definition[1][0],definition[1][1:]
                     if not param:
                         # flag type...
@@ -51,22 +57,43 @@ class Brush( object ):
     def get_command( self, command ):
         for cmd in self.commands:
             if cmd[0] == command:
-                return cmd
+                return cmd[1]
         return None
     def get_commands( self, command ):
         for cmd in self.commands:
             if cmd[0] == command:
                 yield cmd
+    loaded = False
     def load( self, twitch ):
         """Use the twitch object to load our external resources"""
+        # TODO: atomic...
+        if self.loaded:
+            return False 
+        self.loaded = True
+        
         if self.nodraw:
             return
         for suite in self.suites:
             for command in suite:
                 if command[0] in ['map','clampMap']:
-                    filename = command[1]
-                    if filename not in self.maps:
-                        self.images[filename] = twitch._load_image_file( command[1] )
+                    filename = command[1][0]
+                    if filename not in self.images:
+                        self.images[filename] = twitch._load_image_file( filename )
                         if not self.images[filename]:
                             log.warn( 'Unable to load %s', command )
-    
+        if self.sky:
+            command = self.get_command( 'skyparms' )
+            try:
+                farbox,cloudheight = command[0:2]
+            except ValueError as err:
+                raise ValueError( *command )
+            for suffix in ('rt','lf','ft','bk','up','dn'):
+                self.images[suffix] = twitch._load_image_file( '%s_%s'%(farbox,suffix) )
+            print 'Box images', self.images
+            try:
+                self.cloudheight = float( cloudheight )
+            except ValueError as err:
+                self.cloudheight = None
+            except TypeError as err:
+                err.args += (cloudheight,command)
+                raise
