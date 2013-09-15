@@ -339,10 +339,10 @@ class Twitch( object ):
             texture = self.textures[id]
         relative = ''.join( texture['filename'] )
         
-        img = self._load_image_file( relative )
-        
+        img = None
+        img = self.load_script( id, relative )
         if img is None:
-            img = self.load_script( id, relative )
+            img = self._load_image_file( relative )
         if not img:
             log.warn( "Unable to find Image #%s: %s", id, relative )
         return img 
