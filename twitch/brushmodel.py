@@ -27,6 +27,8 @@ class Brush( object ):
     )
     def __init__( self, definition ):
         self.definition = definition 
+        for key,value in self.DEFAULT_SURFACE_PARAMS.items():
+            setattr( self, key, value )
         self.commands = []
         self.suites = []
         self.images = {}
