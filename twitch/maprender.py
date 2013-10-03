@@ -76,7 +76,6 @@ class Map( object ):
         
         if self.sky:
             self.sky.render_sky( mode )
-            return
         glActiveTexture( GL_TEXTURE0 )
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
