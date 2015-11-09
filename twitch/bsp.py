@@ -8,7 +8,7 @@ Basically just uses numpy record declarations to parse the bsp files
 into structured data-arrays.  Uses the bezier module to tessellate 
 patches into simple triangles (note: not triangle strips).
 """
-import numpy, sys, logging, os, zipfile, glob
+import numpy, sys, logging, os, glob
 from . import bezier
 from . import pk3
 
@@ -145,9 +145,14 @@ def parse_bsp( array ):
     }
     """
     array = array.view( 'c' )
-    iarray = array.view( i4 )
     magic = array[:4].tostring()
+    if magic.startswith('PK'):
+        raise RuntimeError("You are likely attempting to load a .pk3 file, Magic Number mismatch: %r"%(
+            magic,
+        ))
     assert magic == 'IBSP', magic 
+    alen = array.shape[-1]
+    iarray = array[:alen-(alen%4)].view( i4 )
     version = iarray[1]
     assert version == 0x2e, version
     direntries = iarray[2:2+17*2]
@@ -193,7 +198,7 @@ class Twitch( object ):
             self.texture_set = texture_set = []
             
             simple_index_count = numpy.sum( simple_faces['n_meshverts'] )
-            indices = numpy.zeros( (simple_index_count,), 'I4' )
+            indices = numpy.zeros( (simple_index_count,), numpy.uint32 )
             # ick, should be a fast way to do this...
             starts = simple_faces['meshvert']
             textures = simple_faces['texture']
@@ -203,6 +208,7 @@ class Twitch( object ):
             current = 0
             texture = None
             lightmap = None
+            end = 0
             for lm,tex,start,stop,index in zip(lightmaps,textures,starts,stops,start_indices):
                 if lm != lightmap or texture != tex:
                     if lightmap or texture:
@@ -214,6 +220,8 @@ class Twitch( object ):
                 end = current + (stop-start)
                 indices[current:end] = self.meshverts[start:stop] + index
                 current = end
+            if lightmap or texture:
+                texture_set.append( (lm,texture,end))
             self.simple_indices = indices
             # for type 2, we need to convert a control surface to a set of indices...
             log.debug( '%s texture/lightmap pairs used by simple geometry', len(self.texture_set, ))
@@ -288,7 +296,7 @@ class Twitch( object ):
             'textures/common/invisible',
             'textures/common/trigger',
         ):
-            return Brush( [ ('surfaceparam','nodraw')] )
+            return self.brush_class( [ ('surfaceparam','nodraw')] )
         if texture is None:
             texture = self.textures[id]
         relative = ''.join( texture['filename'] )
