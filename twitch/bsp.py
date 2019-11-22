@@ -133,7 +133,15 @@ def load_visdata( visdata ):
         assert len(vecs) == size
         result.append( (n_vecs,sz_vecs,vecs))
         visdata = visdata[end:]
-    assert len(result) == 1
+    if len(result) > 1:
+        raise ValueError(
+            'Expected a single visdata section, got %s sections of %s'%(
+                len(result),
+                [x.shape for x in result]
+            )
+        )
+    elif not result:
+        return None
     return result[0]
 
 def parse_bsp( array ):
@@ -148,11 +156,11 @@ def parse_bsp( array ):
     """
     array = array.view( 'c' )
     magic = array[:4].tostring()
-    if magic.startswith('PK'):
+    if magic.startswith(b'PK'):
         raise RuntimeError("You are likely attempting to load a .pk3 file, Magic Number mismatch: %r"%(
             magic,
         ))
-    assert magic == 'IBSP', magic 
+    assert magic == b'IBSP', magic 
     alen = array.shape[-1]
     iarray = array[:alen-(alen%4)].view( i4 )
     version = iarray[1]
@@ -301,7 +309,7 @@ class Twitch( object ):
             return self.brush_class( [ ('surfaceparam','nodraw')] )
         if texture is None:
             texture = self.textures[id]
-        relative = ''.join( texture['filename'] )
+        relative = (b''.join( texture['filename'] )).decode('utf-8')
         
         img = None
         img = self.load_script( id, relative )
@@ -412,10 +420,22 @@ def load( filename, base_directory=None, brush_class=None ):
         base_directory = os.path.dirname( os.path.dirname( filename ) )
     array = numpy.memmap( filename, dtype='c', mode='c' )
     return Twitch( filename, parse_bsp( array ), base_directory, brush_class=brush_class )
-    
+
+def get_options():
+    import argparse 
+    parser = argparse.ArgumentParser(
+        description='Attempts to parse bsp files and report their structure'
+    )
+    parser.add_argument(
+        'target',help='A .bsp (or .pk3) file to (unpack and) parse',
+    )
+    return parser
+
 def main():
     logging.basicConfig( level=logging.DEBUG )
-    target = sys.argv[1]
+    parser = get_options()
+    options = parser.parse_args()
+    target = options.target 
     base_directory = None
     if target.endswith( '.pk3' ):
         from . import pk3 

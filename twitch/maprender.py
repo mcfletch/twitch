@@ -15,7 +15,8 @@ class Map( object ):
     def __init__( self, filename ):
         self.filename = filename 
     def load( self ):
-        self.twitch = bsp.load( sys.argv[1], brush_class=brushviewer.Brush )
+        log.info("Starting BSP load of %s", self.filename)
+        self.twitch = bsp.load( self.filename, brush_class=brushviewer.Brush )
         self.simple_vertices = vbo.VBO( self.twitch.vertices )
         self.simple_indices = vbo.VBO( self.twitch.simple_faces, target=GL_ELEMENT_ARRAY_BUFFER )
         vertices,indices = self.twitch.patch_faces

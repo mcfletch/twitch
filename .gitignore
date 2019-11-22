@@ -1,3 +1,5 @@
 .eric4project
 *.egg-info
 .ropeproject
+build
+__pycache__

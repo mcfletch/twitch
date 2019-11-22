@@ -66,15 +66,17 @@ if __name__ == "__main__":
         # non python files of examples
         install_requires=[
             'six',
-            'OpenGLConttext',
+            'OpenGLContext',
             'numpy',
             'pillow',
+            'simpleparse',
         ],
         entry_points={
           'console_scripts':
               [
                 'twitch-parse-bsp = twitch.bsp:main',
                 'twitch-viewer = twitch.viewer:main',
+                'twitch-downloader = twitch.downloader:main',
             ]
         },
         **extraArguments

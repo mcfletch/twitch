@@ -13,8 +13,13 @@ from OpenGLContext import texture
 BaseContext = testingcontext.getInteractive()
 
 class TwitchContext( BaseContext ):
+
+    def __init__(self, *args, **named):
+        self.target = named.pop('target')
+        super(TwitchContext,self).__init__(*args,**named)
+
     def OnInit( self ):
-        self.renderer = maprender.Map( sys.argv[1] )
+        self.renderer = maprender.Map( self.target )
         threading.Thread( target=self.LoadAndRefresh ).start()
         # default near is far too close for 8 units/foot quake model size
         self.platform.setFrustum( near = 30, far=50000 )
@@ -33,6 +38,23 @@ class TwitchContext( BaseContext ):
             #glScalef( .01, .01, .01 )
             self.renderer.Render(mode)
 
+def get_options():
+    import argparse 
+    parser = argparse.ArgumentParser(
+        description='Renders a Quake III Style .pk3 file using OpenGLContext'
+    )
+    parser.add_argument(
+        'target',help='A .bsp (or .pk3) file to (unpack and) parse',
+    )
+    return parser
+
+
 def main():
-    logging.basicConfig( level = logging.WARN )
-    TwitchContext.ContextMainLoop()
+    logging.basicConfig( level = logging.INFO )
+    options = get_options().parse_args()
+    if options.target.startswith('http://') or options.target.startswith('https://'):
+        from . import downloader
+        target = downloader.pull_pk3(options.target)
+    else:
+        target = options.target 
+    TwitchContext.ContextMainLoop(target=target)
