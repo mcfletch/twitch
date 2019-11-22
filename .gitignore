@@ -3,3 +3,6 @@
 .ropeproject
 build
 __pycache__
+dist
+tests/*.pk3
+tests/*.zip
