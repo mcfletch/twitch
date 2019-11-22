@@ -25,7 +25,7 @@ def pull_pk3(url, force=False):
                     for chunk in response.iter_content(1024*256):
                         fh.write(chunk)
                 with open(url_file,'w') as fh:
-                    fh.write(url.encode('utf-8'))
+                    fh.write(url)
                 return pk3.unpack(download_file, directory)
             except Exception as err:
                 log.error("Failure downloading, removing the cache directory: %s",err) 
