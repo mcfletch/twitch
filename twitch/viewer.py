@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 import OpenGL
 #OpenGL.FULL_LOGGING = True
-import logging,numpy, sys, threading
+import logging,numpy, sys, threading, os
 from OpenGLContext import testingcontext
 from twitch import maprender
 from OpenGL.GL import *
@@ -10,6 +10,7 @@ from OpenGL.arrays import vbo
 from OpenGLContext.scenegraph import imagetexture, shape, transform
 from OpenGLContext.scenegraph.text import text
 from OpenGLContext import texture
+log = logging.getLogger(__name__)
 BaseContext = testingcontext.getInteractive()
 
 class TwitchContext( BaseContext ):
@@ -52,9 +53,23 @@ def get_options():
 def main():
     logging.basicConfig( level = logging.INFO )
     options = get_options().parse_args()
-    if options.target.startswith('http://') or options.target.startswith('https://'):
+    target = options.target
+    if target.startswith('http://') or target.startswith('https://'):
         from . import downloader
-        target = downloader.pull_pk3(options.target)
+        target = downloader.pull_pk3(target)
+    elif (
+        os.path.isfile(target) 
+        and (
+            target.lower().endswith('.pk3') 
+            or target.lower().endswith('.zip')
+        )
+    ):
+        from . import pk3
+        url = os.path.basename(target)
+        key = pk3.key(url)
+        directory = pk3.unpack_directory(key)
+        log.info("Unpacking PK3 to %s", directory)
+        target = pk3.unpack(target,directory)
     else:
         target = options.target 
     TwitchContext.ContextMainLoop(target=target)
