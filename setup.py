@@ -32,20 +32,6 @@ def find_packages( root ):
             yield path.replace( '/','.' )
 
 if __name__ == "__main__":
-    extraArguments = {
-        'classifiers': [
-            """License :: OSI Approved :: BSD License""",
-            """Programming Language :: Python""",
-            """Topic :: Software Development :: Libraries :: Python Modules""",
-            """Topic :: Multimedia :: Graphics :: 3D Rendering""",
-            """Intended Audience :: Developers""",
-            """Environment :: X11 Applications""",
-            """Environment :: Win32 (MS Windows)""",
-        ],
-        'download_url': "http://pypi.python.org/pypi/Twitch",
-        'keywords': 'PyOpenGL,OpenGL,Context,OpenGLContext,render,3D,TrueType,text,scenegraph',
-        'platforms': ['Win32','Linux','OS-X','Posix'],
-    }
     ### Now the actual set up call
     setup (
         name = "Twitch",
@@ -79,5 +65,16 @@ if __name__ == "__main__":
                 'twitch-downloader = twitch.downloader:main',
             ]
         },
-        **extraArguments
+        classifiers= [
+            """License :: OSI Approved :: BSD License""",
+            """Programming Language :: Python :: 2""",
+            """Programming Language :: Python :: 3""",
+            """Topic :: Software Development :: Libraries :: Python Modules""",
+            """Topic :: Multimedia :: Graphics :: 3D Rendering""",
+            """Intended Audience :: Developers""",
+            """Environment :: X11 Applications""",
+            """Environment :: Win32 (MS Windows)""",
+        ],
+        download_url="http://pypi.python.org/pypi/Twitch",
+        keywords= 'PyOpenGL,OpenGL,Context,OpenGLContext,render,3D,TrueType,text,scenegraph',
     )
