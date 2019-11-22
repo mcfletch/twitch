@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 import logging,numpy, sys
 log = logging.getLogger( __name__ )
-from twitch import brushmodel
+from . import brushmodel
 from OpenGL.GL import *
 from OpenGL.GL import shaders
 from OpenGL.arrays import vbo

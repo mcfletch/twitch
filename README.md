@@ -1,6 +1,6 @@
 # Python/PyOpenGL/OpenGLContext PK3 Renderer
 
-Twitch is a sketch of how to load a Quake III style
+Twitch-OGLC is a sketch of how to load a Quake III style
 .pk3 file into a [PyOpenGL](https://github.com/mcfletch/openglcontext) context and render it such that
 you can walk around and see the geometry. It does *not*
 implement a game, it is *just* a renderer and
@@ -12,7 +12,7 @@ You'll need [OpenGLContext](https://github.com/mcfletch/openglcontext) installed
 the GUI libraries it supports (GLUT, PyGame, wxPython).
 
 ```
-pip3.6 install twitch OpenGLContext pygame
+pip3.6 install twitchoglc OpenGLContext pygame
 ```
 
 ## Usage

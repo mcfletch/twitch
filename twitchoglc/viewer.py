@@ -4,7 +4,7 @@ import OpenGL
 #OpenGL.FULL_LOGGING = True
 import logging,numpy, sys, threading, os
 from OpenGLContext import testingcontext
-from twitch import maprender
+from . import maprender
 from OpenGL.GL import *
 from OpenGL.arrays import vbo
 from OpenGLContext.scenegraph import imagetexture, shape, transform

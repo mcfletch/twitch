@@ -375,7 +375,7 @@ class Twitch( object ):
         return self.sky_brushes
     
     def compile_script( self, id, definition ):
-        """Compile a Quake3 shader script definition from twitch.shaderparser"""
+        """Compile a Quake3 shader script definition from twitchoglc.shaderparser"""
         brush = self._shader_brushes.get( id )
         if brush:
             brush.load(self)

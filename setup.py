@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Installs twitch using setuptools
+"""Installs twitchoglc using setuptools
 
 Run:
     python setup.py install
@@ -15,7 +15,7 @@ sys.path.insert(0, '.' )
 
 def find_version( ):
     for line in open( os.path.join(
-        'twitch','__init__.py',
+        'twitchoglc','__init__.py',
     )):
         if line.strip().startswith( '__version__' ):
             return eval(line.strip().split('=')[1].strip())
@@ -34,15 +34,15 @@ def find_packages( root ):
 if __name__ == "__main__":
     ### Now the actual set up call
     setup (
-        name = "Twitch",
+        name = "twitchoglc",
         version = version,
         description = "Quake-style PK3/BSP(3) file loader",
         author = "Mike C. Fletcher",
         author_email = "mcfletch@users.sourceforge.net",
-        url = "https://launchpad.net/twitch",
+        url = "https://github.com/mcfletch/twitch",
         license = "BSD",
 
-        packages = list(find_packages('twitch')),
+        packages = list(find_packages('twitchoglc')),
         # need to add executable scripts too...
         options = {
             'sdist': {
@@ -60,9 +60,9 @@ if __name__ == "__main__":
         entry_points={
           'console_scripts':
               [
-                'twitch-parse-bsp = twitch.bsp:main',
-                'twitch-viewer = twitch.viewer:main',
-                'twitch-downloader = twitch.downloader:main',
+                'twitch-parse-bsp = twitchoglc.bsp:main',
+                'twitch-viewer = twitchoglc.viewer:main',
+                'twitch-downloader = twitchoglc.downloader:main',
             ]
         },
         classifiers= [
@@ -75,6 +75,6 @@ if __name__ == "__main__":
             """Environment :: X11 Applications""",
             """Environment :: Win32 (MS Windows)""",
         ],
-        download_url="http://pypi.python.org/pypi/Twitch",
+        download_url="http://pypi.python.org/pypi/OpenGLContext_twitch",
         keywords= 'PyOpenGL,OpenGL,Context,OpenGLContext,render,3D,TrueType,text,scenegraph',
     )

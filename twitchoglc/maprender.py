@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 import logging,numpy, sys,traceback
 log = logging.getLogger( __name__ )
-from twitch import bsp,brushviewer
+from . import bsp,brushviewer
 from OpenGL.GL import *
 from OpenGL.arrays import vbo
 from OpenGLContext.scenegraph import imagetexture
