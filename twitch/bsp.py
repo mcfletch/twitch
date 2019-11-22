@@ -8,9 +8,11 @@ Basically just uses numpy record declarations to parse the bsp files
 into structured data-arrays.  Uses the bezier module to tessellate 
 patches into simple triangles (note: not triangle strips).
 """
+from __future__ import absolute_import
 import numpy, sys, logging, os, glob
 from . import bezier
 from . import pk3
+from six.moves import zip
 
 log = logging.getLogger( __name__ )
 i4 = '<i4'

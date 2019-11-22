@@ -6,6 +6,7 @@ pk3 files generally look like this:
     textures/*/*.tga
     levelshots/*.jpg
 """
+from __future__ import absolute_import
 import os, zipfile, tempfile, hashlib
 
 def escape_path( fn ):

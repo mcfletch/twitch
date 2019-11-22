@@ -1,5 +1,7 @@
 """Tessellate Quake3-style Quadratic Bezier Spline Patches"""
+from __future__ import absolute_import
 from numpy import *
+from six.moves import range
 
 def weights( a ):
     """Calculate control-point weights for given step on the control curve

@@ -1,4 +1,6 @@
 """Low-level renderer for Q3 style BSP maps"""
+from __future__ import absolute_import
+from __future__ import print_function
 import logging,numpy, sys,traceback
 log = logging.getLogger( __name__ )
 from twitch import bsp,brushviewer
@@ -40,7 +42,7 @@ class Map( object ):
         self.skies = self.twitch.find_sky()
         if self.skies:
             for sky in self.skies:
-                print 'Sky:', sky
+                print('Sky:', sky)
                 try:
                     sky.load(self.twitch)
                     sky.compile_textures()

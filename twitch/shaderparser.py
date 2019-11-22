@@ -1,4 +1,6 @@
 #! /usr/bin/env python
+from __future__ import absolute_import
+from __future__ import print_function
 from simpleparse.parser import Parser
 from simpleparse.common import chartypes, comments, numbers, strings
 from simpleparse.dispatchprocessor import *
@@ -87,27 +89,34 @@ class ParseProcessor( DispatchProcessor ):
     def __init__( self, *args, **named ):
         DispatchProcessor.__init__( self, *args, **named )
         self.productions = {}
-    def file( self, (tag,start,stop,children), buffer ):
+    def file( self, match, buffer ):
+        (tag,start,stop,children) = match
         dispatchList( self, children, buffer )
-    def production( self, (tag,start,stop,children), buffer ):
+    def production( self, match, buffer ):
+        (tag,start,stop,children) = match
         name,suite = children
         name = dispatch( self, name, buffer )
         self.productions[name] = dispatch( self, suite, buffer )
-    def suite( self, (tag,start,stop,children), buffer):
+    def suite( self, match, buffer):
+        (tag,start,stop,children) = match
         return dispatchList( self, children, buffer )
-    def command( self, (tag,start,stop,children), buffer ):
+    def command( self, match, buffer ):
+        (tag,start,stop,children) = match
         name = dispatch( self, children[0], buffer )
         params = dispatchList( self, children[1:], buffer )
         return (name,params)
-    def name( self, (tag,start,stop,children), buffer ):
+    def name( self, match, buffer ):
+        (tag,start,stop,children) = match
         return buffer[start:stop]
     ref = name
-    def number( self, (tag,start,stop,children), buffer ):
+    def number( self, match, buffer ):
+        (tag,start,stop,children) = match
         try:
             return int( buffer[start:stop] )
         except ValueError as err:
             return float( buffer[start:stop] )
-    def vector( self, (tag,start,stop,children), buffer):
+    def vector( self, match, buffer):
+        (tag,start,stop,children) = match
         return dispatchList( self, children, buffer )
 
 def load( filename ):
@@ -123,15 +132,15 @@ def main( ):
     import sys 
     productions = load( sys.argv[1] )
     def print_suite( suite, indent=1 ):
-        print ' '*max((indent-1,0)),'{'
+        print(' '*max((indent-1,0)),'{')
         for component in suite:
             if isinstance( component, tuple ):
-                print ' '*indent, component[0], '->', " ".join( [str(x) for x in component[1]] )
+                print(' '*indent, component[0], '->', " ".join( [str(x) for x in component[1]] ))
             else:
                 print_suite( component, indent+1 )
-        print ' '*max((indent-1,0)),'}'
+        print(' '*max((indent-1,0)),'}')
     for key,suite in sorted( productions.items()):
-        print key 
+        print(key) 
         print_suite( suite )
 
 if __name__ == "__main__":

@@ -5,9 +5,10 @@ Run:
     python setup.py install
 to install the package from the source archive.
 """
+from __future__ import absolute_import
 try:
     from setuptools import setup
-except ImportError, err:
+except ImportError as err:
     from distutils.core import setup
 import sys, os
 sys.path.insert(0, '.' )
@@ -62,7 +63,13 @@ if __name__ == "__main__":
                 'formats':['gztar','zip'],
             }
         },
-        # non python files of examples      
+        # non python files of examples
+        install_requires=[
+            'six',
+            'OpenGLConttext',
+            'numpy',
+            'pillow',
+        ],
         entry_points={
           'console_scripts':
               [

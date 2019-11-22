@@ -1,4 +1,5 @@
 """Renderer for a Twitch node (Quake III style BSP map)"""
+from __future__ import absolute_import
 import logging,numpy, sys
 log = logging.getLogger( __name__ )
 from twitch import brushmodel
