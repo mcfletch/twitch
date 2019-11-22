@@ -46,7 +46,10 @@ if __name__ == "__main__":
         # need to add executable scripts too...
         options = {
             'sdist': {
-                'formats':['gztar','zip'],
+                'formats':['gztar'],
+            },
+            'bdist_wheel':{
+                'universal': True,
             }
         },
         # non python files of examples
