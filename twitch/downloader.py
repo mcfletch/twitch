@@ -11,6 +11,7 @@ def pull_pk3(url, force=False):
     bsps = sorted(glob.glob(os.path.join(directory,'maps/*.bsp')))
     if (not bsps) or force:
         source = os.path.join(directory,'source-file')
+        url_file = os.path.join(directory,'.url')
         if force or not os.path.exists(source):
             log.info("Downloading target pk3: %r", url)
             parsed = urllib_parse.urlparse(url)
@@ -23,9 +24,13 @@ def pull_pk3(url, force=False):
                 with open(download_file,'wb') as fh:
                     for chunk in response.iter_content(1024*256):
                         fh.write(chunk)
+                with open(url_file,'w') as fh:
+                    fh.write(url.encode('utf-8'))
                 return pk3.unpack(download_file, directory)
             except Exception as err:
-                log.error("Failure downloading, remove the cache directory: %s: %s", directory, err)
+                log.error("Failure downloading, removing the cache directory: %s",err) 
+                shutil.rmtree(directory)
+                raise
         else:
             log.info("Unpacking the existing source: %r", source)
             return pk3.unpack(source,directory)
