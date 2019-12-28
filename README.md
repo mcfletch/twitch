@@ -21,6 +21,7 @@ twitch-downloader --resources http://ioquake3.org/files/xcsv_hires.zip
 
 To download, unpack and run:
 ```
+twitch-viewer http://sst13.de/map-13circle_xt.zip
 twitch-viewer https://gamebanana.com/dl/391867
 ```
 > Note
