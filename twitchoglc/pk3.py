@@ -12,6 +12,7 @@ try:
 except NameError:
     unicode = str
 import os, zipfile, tempfile, hashlib
+MAPS_DIR = os.path.expanduser( '~/.cache/twitch/maps' )
 
 def escape_path( fn ):
     throwaway_directory = '/tmp/junk/though/'
@@ -38,14 +39,14 @@ def unpack_directory( key=None ):
     """Calculate and create the unpacking directory for the given key
     """
     if key:
-        path = os.path.join( os.path.expanduser( '~/.cache/twitch/maps' ), key )
+        path = os.path.join( MAPS_DIR, key )
         if not os.path.exists( path ):
             os.makedirs( path )
     else:
         path = tempfile.mkdtemp( prefix='twitch', suffix='pk3' )
     return path
         
-def unpack( pk3, directory, no_recurse=False ):
+def unpack( pk3, directory, no_recurse=False, resources=False ):
     """Unpack a .pk3 file into directory for loading
 
     directory = key( download_url )
@@ -65,12 +66,12 @@ def unpack( pk3, directory, no_recurse=False ):
         zip.extractall(directory)
         bsp = None
         for pk3 in pk3s:
-            return unpack(pk3, directory, no_recurse=True)
-    if not bsps:
+            return unpack(pk3, directory, no_recurse=True, resources=resources)
+    if (not resources) and not bsps:
         raise IOError( """Did not find any .bsp files in the .pk3 file""" )
-    elif len( bsps ) > 1:
+    elif (not resources) and len( bsps ) > 1:
         raise IOError( """Found %s .bsp files, don't know how to handle that yet"""%( len(bsps)))
     zip.extractall( directory )
-    return bsps[0]
+    return bsps[0] if bsps else None
 
 

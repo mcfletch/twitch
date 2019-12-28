@@ -52,6 +52,7 @@ def get_options():
 
 def main():
     logging.basicConfig( level = logging.INFO )
+    logging.getLogger('OpenGLContext.scenegraph.text').setLevel(logging.WARNING)
     options = get_options().parse_args()
     target = options.target
     if target.startswith('http://') or target.startswith('https://'):

@@ -5,11 +5,12 @@ from six.moves import urllib_parse
 from . import pk3
 log = logging.getLogger(__name__)
 
-def pull_pk3(url, force=False):
+def pull_pk3(url, force=False, resources=False):
     key = pk3.key(url)
     directory = pk3.unpack_directory(key)
     bsps = sorted(glob.glob(os.path.join(directory,'maps/*.bsp')))
-    if (not bsps) or force:
+    textures = sorted(glob.glob(os.path.join(directory,'textures/*')))
+    if force or (not resources and (not bsps)) or (resources and not textures):
         source = os.path.join(directory,'source-file')
         url_file = os.path.join(directory,'.url')
         if force or not os.path.exists(source):
@@ -26,18 +27,18 @@ def pull_pk3(url, force=False):
                         fh.write(chunk)
                 with open(url_file,'w') as fh:
                     fh.write(url)
-                return pk3.unpack(download_file, directory)
+                return pk3.unpack(download_file, directory, resources=resources)
             except Exception as err:
                 log.error("Failure downloading, removing the cache directory: %s",err) 
                 shutil.rmtree(directory)
                 raise
         else:
             log.info("Unpacking the existing source: %r", source)
-            return pk3.unpack(source,directory)
+            return pk3.unpack(source,directory,resources=resources)
             # shutil.rmtree(directory)
     if len(bsps) > 1:
         log.warning('More than one bsp in %s, using arbitrary choice', url)
-    return bsps[0]
+    return bsps[0] if bsps else None
             
     
 def get_options():
@@ -52,6 +53,12 @@ def get_options():
         action='store_true',
     )
     parser.add_argument(
+        '-r','--resources',
+        help='Download the package as resources files rather than a map',
+        default=False,
+        action='store_true',
+    )
+    parser.add_argument(
         'url',help='The http/https url to download to the local cache',
     )
 
@@ -59,5 +66,5 @@ def get_options():
 def main():
     logging.basicConfig(level=logging.DEBUG)
     options = get_options().parse_args()
-    bsp = pull_pk3(options.url,force=options.force)
+    bsp = pull_pk3(options.url,force=options.force, resources=options.resources)
     log.info("Downloaded to %s", bsp)

@@ -322,12 +322,13 @@ class Twitch( object ):
     def _load_image_file( self, relative ):
         if pk3.escape_path( relative ):
             raise IOError( """Texture: %s references an external file"""%( relative ))
-        extensions = ['.tga','.jpg','.png','.jpeg']
+        extensions = ['', '.tga','.jpg','.png','.jpeg']
         path = os.path.join( self.base_directory, relative )
         directory,basename = os.path.split( path )
         alt_path = os.path.join( directory, 'x_'+basename )
         img = None
-        for possible in [path,alt_path]:
+        from_others = glob.glob(os.path.join(pk3.MAPS_DIR,'*',relative+'.???'))
+        for possible in [path,alt_path] + from_others:
             for extension in extensions:
                 final = possible + extension
                 if os.path.exists( final ):

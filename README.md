@@ -13,6 +13,8 @@ the GUI libraries it supports (GLUT, PyGame, wxPython).
 
 ```
 pip3.6 install twitchoglc OpenGLContext pygame
+# Get high-res versions of core textures
+twitch-downloader --resources http://ioquake3.org/files/xcsv_hires.zip
 ```
 
 ## Usage
